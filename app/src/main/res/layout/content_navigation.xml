@@ -9,12 +9,16 @@
     tools:showIn="@layout/activity_navigation">
 
     <ImageView
+        android:id="@+id/imageView"
         android:layout_width="fill_parent"
-        android:layout_height="fill_parent"
+        android:layout_height="514dp"
         android:layout_alignParentTop="true"
+        android:layout_marginBottom="8dp"
+        android:layout_marginTop="128dp"
         android:background="@drawable/floor_plan"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
@@ -22,9 +26,44 @@
         android:id="@+id/loc_mark"
         android:layout_width="62dp"
         android:layout_height="63dp"
-        app:srcCompat="@drawable/location_mark_new"
-        tools:layout_editor_absoluteX="137dp"
-        tools:layout_editor_absoluteY="423dp" />
+        android:layout_marginBottom="100dp"
+        android:layout_marginEnd="500dp"
+        android:layout_marginTop="110dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.635"
+        app:layout_constraintStart_toEndOf="@+id/imageView"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.0"
+        app:srcCompat="@drawable/location_mark_new" />
+
+    <AutoCompleteTextView
+        android:id="@+id/autoCompleteTextView"
+        android:layout_width="318dp"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="8dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="16dp"
+        android:background="#FFFFFFFF"
+        android:hint="Your location"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="1.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <AutoCompleteTextView
+        android:id="@+id/autoCompleteTextView2"
+        android:layout_marginTop="10dp"
+        android:layout_width="318dp"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="8dp"
+        android:layout_marginStart="8dp"
+        android:background="#FFFFFFFF"
+        android:hint="Choose Destination"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="1.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/autoCompleteTextView" />
 
 
 </android.support.constraint.ConstraintLayout>

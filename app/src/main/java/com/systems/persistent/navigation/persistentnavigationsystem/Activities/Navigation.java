@@ -36,7 +36,7 @@ public class Navigation extends AppCompatActivity {
         float screenWidth = getResources().getDisplayMetrics().widthPixels;
 
         while(i<600) {
-            moveImageView(loc_mark, i, 0, 600);
+            moveImageView(loc_mark, i, 0, 50000);
             i=i+10;
         }
 
