@@ -1,5 +1,18 @@
 <resources>
-    <string name="app_name">Persistent Navigation System</string>
-    <string name="title_activity_splash">Splash</string>
-    <string name="title_activity_navigation">Navigation</string>
+<string name="app_name">Persistent Navigators</string>
+<string name="title_activity_splash">Splash</string>
+<string name="title_activity_navigation">Navigation</string>
+
+<!-- Image content descriptions -->
+<string name="cd_splash_screen" translatable="false">Splash Screen</string>
+<string name="cd_location_switch" translatable="false">Switch locations</string>
+<string name="cd_location_marker" translatable="false">Location marker</string>
+
+<!-- Strings -->
+<string name="til_location_from_hint">From</string>
+<string name="til_location_to_hint">To</string>
+<string name="til_error">Please enter a valid location</string>
+<string name="snackbar_update_location">Updating locationâ€¦</string>
+<string name="snackbar_location_switch_error">Either of the fields is empty</string>
+<string name="something_went_wrong">Something went wrong</string>
 </resources>
