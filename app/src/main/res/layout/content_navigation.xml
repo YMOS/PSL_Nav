@@ -13,6 +13,7 @@
         xmlns:tools="http://schemas.android.com/tools"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:id="@+id/cl_home_layout"
         tools:context="com.systems.persistent.navigation.persistentnavigationsystem.Activities.Navigation">
 
         <RelativeLayout
@@ -103,11 +104,41 @@
             android:layout_height="35dp"
             android:layout_marginTop="12dp"
             android:contentDescription="@string/cd_location_marker"
-            android:src="@drawable/location_mark_new"
+            android:src="@drawable/marker_current_position"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintHorizontal_bias="0.045"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/rl_location_prompt" />
+
+        <ImageView
+            android:id="@+id/iv_src_marker"
+            android:layout_width="35dp"
+            android:layout_height="35dp"
+            android:src="@drawable/marker_destination"
+            android:contentDescription="@string/cd_source_marker"
+            app:layout_constraintTop_toBottomOf="@id/rl_location_prompt"
+            android:layout_marginTop="100dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginEnd="62dp"
+            android:layout_marginRight="62dp"
+            android:elevation="8dp"
+            android:visibility="gone"
+            />
+
+        <ImageView
+            android:id="@+id/iv_destination_marker"
+            android:layout_width="35dp"
+            android:layout_height="35dp"
+            android:src="@drawable/marker_source"
+            android:contentDescription="@string/cd_destination_marker"
+            app:layout_constraintBottom_toBottomOf="parent"
+            android:layout_marginBottom="180dp"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginStart="11dp"
+            android:layout_marginLeft="11dp"
+            android:elevation="8dp"
+            android:visibility="gone"
+            />
 
     </android.support.constraint.ConstraintLayout>
 

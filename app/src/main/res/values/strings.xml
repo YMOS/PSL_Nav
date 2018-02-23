@@ -7,8 +7,12 @@
 <string name="cd_splash_screen" translatable="false">Splash Screen</string>
 <string name="cd_location_switch" translatable="false">Switch locations</string>
 <string name="cd_location_marker" translatable="false">Location marker</string>
+<string name="cd_source_marker" translatable="false">Source marker</string>
+<string name="cd_destination_marker" translatable="false">Destination marker</string>
+<string name="cd_floor_plan" translatable="false">Floor plan</string>
 
-<!-- Strings -->
+
+    <!-- Strings -->
 <string name="til_location_from_hint">From</string>
 <string name="til_location_to_hint">To</string>
 <string name="til_error">Please enter a valid location</string>
