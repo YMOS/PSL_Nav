@@ -1,11 +1,16 @@
 package com.systems.persistent.navigation.persistentnavigationsystem.Activities;
 
+import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.drawable.BitmapDrawable;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
 import android.os.Bundle;
 import android.support.design.widget.CoordinatorLayout;
 import android.support.design.widget.Snackbar;
@@ -19,15 +24,39 @@ import android.view.inputmethod.EditorInfo;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.systems.persistent.navigation.persistentnavigationsystem.Activities.custom.LocationUpdaterAsync;
 import com.systems.persistent.navigation.persistentnavigationsystem.Activities.models.CoordinateModel;
 import com.systems.persistent.navigation.persistentnavigationsystem.Activities.models.EndPointsModel;
 import com.systems.persistent.navigation.persistentnavigationsystem.R;
 
+import org.json.JSONObject;
 
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.net.InetAddress;
+import java.net.Socket;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
+
+import static android.hardware.Sensor.TYPE_GYROSCOPE;
+import static android.hardware.Sensor.TYPE_LINEAR_ACCELERATION;
+import static android.hardware.Sensor.TYPE_STEP_COUNTER;
+import static android.hardware.Sensor.TYPE_ORIENTATION;
 public class Navigation extends AppCompatActivity implements View.OnClickListener,
         EditText.OnEditorActionListener, LocationUpdaterAsync.LocationUpdateCallback {
+    //sensor variables
+    private SensorManager mSensorManager;
+    private SensorEventListener listener;
+    private Socket socket;
+    private static final int SERVERPORT = 5000;
+    private String SERVER_IP="10.88.230.13";
+    private Map<String ,String > sensorData=new HashMap<>();
+    private String value="";
+    private Timer timer;
 
     // Texts.
     private TextInputLayout tilFrom;
@@ -62,14 +91,47 @@ public class Navigation extends AppCompatActivity implements View.OnClickListene
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_navigation);
+        final Timer timer = new Timer();
+        mSensorManager = (SensorManager) this.getSystemService(Context.SENSOR_SERVICE);
+
 
         // Initialize views.
         initViews();
 
         // Set the listeners.
         setListeners();
+
+        //Initialize sensor
+        initSensor(mSensorManager);
+
+        //schedule sensor for 500ms
+        schedulerSensor(timer);
+
+
+
+
     }
 
+    public void schedulerSensor(Timer timer){
+        timer.scheduleAtFixedRate(new TimerTask() {
+            @Override
+            public void run() {
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        if(socket!=null && socket.isConnected() && !sensorData.isEmpty())
+                            try {
+                                JSONObject jsonObject = new JSONObject(sensorData);
+                                PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+                                out.println(jsonObject.toString());
+                            }catch (IOException e){
+                                e.printStackTrace();
+                            }
+                    }
+                }).start();
+            }
+        },0,500);
+    }
 
     @Override
     public void onClick(View v) {
@@ -129,6 +191,28 @@ public class Navigation extends AppCompatActivity implements View.OnClickListene
         return false;
     }
 
+    private void initSensor(SensorManager mSensorManager){
+
+        if(socket==null || !socket.isConnected())
+            new Thread(new Runnable() {
+                   @Override
+                   public void run() {
+                       InetAddress serverAddr = null;
+                       try {
+                           serverAddr = InetAddress.getByName(SERVER_IP);
+                           socket = new Socket(serverAddr, SERVERPORT);
+                       } catch (IOException e) {
+                           e.printStackTrace();
+                       }
+                   }
+               }).start();
+            mSensorManager.registerListener(listener, mSensorManager.getDefaultSensor(Sensor.TYPE_ORIENTATION), SensorManager.SENSOR_DELAY_GAME);
+            mSensorManager.registerListener(listener, mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER), SensorManager.SENSOR_DELAY_GAME);
+            mSensorManager.registerListener(listener, mSensorManager.getDefaultSensor(TYPE_GYROSCOPE), SensorManager.SENSOR_DELAY_GAME);
+            mSensorManager.registerListener(listener, mSensorManager.getDefaultSensor(TYPE_LINEAR_ACCELERATION), SensorManager.SENSOR_DELAY_GAME);
+
+    }
+
     private void startTracking() {
         EndPointsModel model = new EndPointsModel();
         model.setStrTo(strTo);
@@ -158,6 +242,41 @@ public class Navigation extends AppCompatActivity implements View.OnClickListene
         ivLocationMarker.setOnClickListener(this);
         edFrom.setOnEditorActionListener(this);
         edTo.setOnEditorActionListener(this);
+
+        //sensor data is collected
+        listener = new SensorEventListener() {
+            @Override
+            public void onAccuracyChanged(Sensor arg0, int arg1) {
+            }
+
+            @Override
+            public void onSensorChanged(SensorEvent event) {
+                Sensor sensor = event.sensor;
+                float dataset[];
+                value = "";
+                if (sensor.getType() == Sensor.TYPE_ORIENTATION) {
+                    float zOrient, xOrient;
+                    zOrient = event.values[0];
+                    xOrient = event.values[1];
+                    sensorData.put("z_x", Float.toString(zOrient)+" "+Float.toString(xOrient));
+                }
+
+                if (sensor.getType() == TYPE_LINEAR_ACCELERATION) {
+                    dataset = event.values;
+                    for (float data : dataset) {
+                        value += data + " ";
+                    }
+                    sensorData.put("Linear", value);
+                }
+                /*if (sensor.getType() == TYPE_STEP_COUNTER) {
+                    dataset = event.values;
+                    for (float data : dataset) {
+                        value += data + " ";
+                    }
+                    sensorData.put("Step Counter", value);
+                }*/
+            }
+        };
     }
 
     private void initViews() {
@@ -228,6 +347,13 @@ public class Navigation extends AppCompatActivity implements View.OnClickListene
         Bitmap bitmap = BitmapFactory.decodeResource(getResources(),R.drawable.floor_plan);
         mutableBitmap = bitmap.copy(Bitmap.Config.ARGB_8888, true);
         tempBitmap = Bitmap.createBitmap(mutableBitmap.getWidth(), mutableBitmap.getHeight(), Bitmap.Config.RGB_565);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        mSensorManager.unregisterListener(listener);
+        timer.cancel();
     }
 
 
