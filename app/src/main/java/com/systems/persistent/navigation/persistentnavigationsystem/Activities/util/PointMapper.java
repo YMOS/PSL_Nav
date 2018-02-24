@@ -24,21 +24,24 @@ public class PointMapper{
         list.add("C31");
         pointMapList.put(key,list);
 
-        /*key = "IN,C31";
+        key = "IN,TL13";
         list = new ArrayList<>();
         list.add("IN");
-        list.add("C31");
-        list.add("C30");
-        list.add("C29");
-        pointMapList.put(key,list);*/
+        list.add("P1");
+        list.add("P2");
+        list.add("P3");
+        list.add("P3");
+        list.add("TL13");
+        pointMapList.put(key,list);
 
         key="IN,MERCURY";
         list = new ArrayList<>();
         list.add("IN");
         list.add("P1");
+        list.add("P2");
+        list.add("P3");
+        list.add("P4");
         list.add("P5");
-        list.add("P6");
-        list.add("P8");
         list.add("MERCURY");
         pointMapList.put(key,list);
 
