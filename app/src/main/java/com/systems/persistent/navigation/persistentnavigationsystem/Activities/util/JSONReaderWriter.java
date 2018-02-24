@@ -32,7 +32,7 @@ public class JSONReaderWriter {
     public void JSONWriter(String label, String location){
         JSONObject jsonObject = this.packJSON(label,location);
         FileWriter fileWriter = null;
-        String path = "/sdcard/PSL_NAV/target.json";
+        String path = "/sdcard/PSL_NAV/path.json";
         File mediaDir = new File("/sdcard/PSL_NAV/");
         if (!mediaDir.exists()){
             Log.d("Dir","entered");

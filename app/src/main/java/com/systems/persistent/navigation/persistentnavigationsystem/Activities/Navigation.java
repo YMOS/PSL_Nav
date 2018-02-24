@@ -9,6 +9,7 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.drawable.BitmapDrawable;
+import android.media.Image;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiManager;
 import android.os.Build;
@@ -33,12 +34,12 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.systems.persistent.navigation.persistentnavigationsystem.Activities.custom.LocationUpdater;
-import com.systems.persistent.navigation.persistentnavigationsystem.Activities.custom.LocationUpdaterAsync;
 import com.systems.persistent.navigation.persistentnavigationsystem.Activities.custom.TargetPointsReceiver;
 import com.systems.persistent.navigation.persistentnavigationsystem.Activities.models.CoordinateModel;
 import com.systems.persistent.navigation.persistentnavigationsystem.Activities.models.EndPointsModel;
 import com.systems.persistent.navigation.persistentnavigationsystem.Activities.models.Route;
 import com.systems.persistent.navigation.persistentnavigationsystem.Activities.util.JSONReaderWriter;
+import com.systems.persistent.navigation.persistentnavigationsystem.Activities.util.PointMapper;
 import com.systems.persistent.navigation.persistentnavigationsystem.R;
 
 import org.json.JSONArray;
@@ -87,6 +88,12 @@ public class Navigation extends AppCompatActivity implements View.OnClickListene
     //Marker.
     private ImageView ivLocationMarker;
 
+    //Source Marker
+    private ImageView ivLocationSource;
+
+    //Destination Marker
+    private ImageView ivLocationDestination;
+
     //Floor plan view
     private  ImageView ivFloorPlan;
 
@@ -117,13 +124,12 @@ public class Navigation extends AppCompatActivity implements View.OnClickListene
         receiveTarget();
 
         //Receive Points
-        //receivePoints();
+        receivePoints();
 
         // Initialize views.
         initViews();
 
         //start Tracking
-        startTracking();
 
         // Set the listeners.
         setListeners();
@@ -189,16 +195,14 @@ public class Navigation extends AppCompatActivity implements View.OnClickListene
         if (v.getId() == R.id.ed_location_from) {
             if (actionId == EditorInfo.IME_ACTION_NEXT) {
 
-                if (edFrom.getText().toString().isEmpty()) {
-                    tilFrom.setError(getString(R.string.til_error));
+                if (edFrom.getText().toString().isEmpty() || !targetPoints.containsKey(edFrom.getText().toString().toUpperCase())) {
                     edFrom.setText("");
-
+                    Toast.makeText(this, "Enter valid Source", Toast.LENGTH_SHORT).show();
                     // Indicate that the view has consumed the event.
                     return true;
                 } else {
                     if (Utility.isValidString(edFrom.getText().toString())) {
                         strFrom = edFrom.getText().toString();
-
                         //Transfer control to next editText.
                         edFrom.setNextFocusDownId(edTo.getId());
                     }
@@ -206,23 +210,71 @@ public class Navigation extends AppCompatActivity implements View.OnClickListene
             }
         } else if (v.getId() == R.id.ed_location_to) {
             if (actionId == EditorInfo.IME_ACTION_DONE) {
-                if (edTo.getText().toString().isEmpty()) {
-                    tilTo.setError(getString(R.string.til_error));
+                if (edTo.getText().toString().isEmpty() || !targetPoints.containsKey(edTo.getText().toString().toUpperCase())) {
                     edTo.setText("");
-
+                    Toast.makeText(this, "Enter valid destination", Toast.LENGTH_SHORT).show();
                     return true;
                 } else {
                     if (Utility.isValidString(edTo.getText().toString())) {
                         strTo = edTo.getText().toString();
-
                         // Start the tracking procedure.
-                        startTracking();
+                        putSourceandDestinationMarkers(strTo,strFrom);
+                        drawNavigationPath(strFrom,strTo);
                     }
                 }
             }
         }
 
         return false;
+    }
+
+    private void putSourceandDestinationMarkers(String strTo, String strFrom) {
+        Route routeSrc = targetPoints.get(strFrom.toUpperCase());
+        Route routeDest = targetPoints.get(strTo.toUpperCase());
+        moveImageView(ivLocationSource,routeSrc.get_x(),routeSrc.get_y(),100);
+        moveImageView(ivLocationDestination,routeDest.get_x(),routeDest.get_y(),100);
+        ivLocationDestination.setVisibility(View.VISIBLE);
+        ivLocationSource.setVisibility(View.VISIBLE);
+    }
+
+    Route routeStart=null;
+    Route routeNext = null;
+    int index = 0;
+    List<String> navRoute=null;
+    private void drawNavigationPath(String strFrom,String strTo) {
+        PointMapper pointMapper = new PointMapper();
+        navRoute = pointMapper.getDirections(strFrom,strTo);
+        Log.d("Navigation", String.valueOf(navRoute));
+        prepBitmap();
+
+        if(navRoute!=null) {
+            /*Timer timer = new Timer();
+            timer.scheduleAtFixedRate(new TimerTask() {
+                @Override
+                public void run() {
+                    if (index < navRoute.size() - 1) {
+                        routeStart = routePoints.get(navRoute.get(index).toUpperCase());
+                        routeNext = routePoints.get(navRoute.get(index + 1).toUpperCase());
+                        if (routeNext != null && routeStart != null) {
+                            Log.d("RouteNavigation", routeStart.getLabel() + "," + routeNext.getLabel());
+                        }
+                        index++;
+                        //drawRoute(routeStart.get_x()+105,routeStart.get_y()+105,routeNext.get_x()+105,routeNext.get_y()+105);
+                        //Log.d("RouteNavigation",routeStart.getLabel()+","+routeNext.getLabel());
+                    }
+                }
+            },0,1000);
+        }*/
+            for (int index = 0; index < navRoute.size() - 1; index++) {
+
+                routeStart = routePoints.get(navRoute.get(index).toUpperCase());
+                routeNext = routePoints.get(navRoute.get(index + 1).toUpperCase());
+                if (routeNext != null && routeStart != null)
+                    drawRoute(routeStart.get_x() + 105, routeStart.get_y() + 105, routeNext.get_x() + 105, routeNext.get_y() + 105);
+                Log.d("RouteNavigation", routeStart.getLabel() + "," + routeNext.getLabel());
+
+            }
+        }
     }
 
     private void startTracking() {
@@ -261,7 +313,7 @@ public class Navigation extends AppCompatActivity implements View.OnClickListene
     Runnable runnable = new Runnable() {
         @Override
         public void run() {
-            /*Long timeStamp = System.currentTimeMillis()/1000;
+            Long timeStamp = System.currentTimeMillis()/1000;
             List<ScanResult> mResults = mWifiManager.getScanResults();
             JSONObject wifiResults = new JSONObject();
             JSONArray wifiJsonArray=new JSONArray();
@@ -278,32 +330,33 @@ public class Navigation extends AppCompatActivity implements View.OnClickListene
             JSONObject jsonObject=new JSONObject();
 
             try {
-                jsonObject.put("group","semicolons98");
-                jsonObject.put("username","semicolons98");
+                jsonObject.put("group","semicolons70");
+                jsonObject.put("username","semicolons70");
                 jsonObject.put("location","check");
                 jsonObject.put("time", timeStamp);
                 jsonObject.put("wifi-fingerprint", wifiJsonArray);
             } catch (JSONException e) {
                 e.printStackTrace();
             }
-            Log.d("Data",jsonObject.toString());*/
-            locationUpdater=new LocationUpdater(getApplicationContext());
-            locationUpdater.execute("abc","track");
+            Log.d("Data",jsonObject.toString());
+
+
+            //locationUpdater=new LocationUpdater(getApplicationContext(),"location","semicolons90","semicolons90");
+            locationUpdater = new LocationUpdater(getApplicationContext(),jsonObject);
+            locationUpdater.execute();
             locationUpdater.callBack =new LocationUpdater.LocationUpdateCallback() {
                 @Override
                 public void onLocationUpdate(String route) {
-                    Log.d("Res7",route);
                     //textToSpeech.speak(route,TextToSpeech.QUEUE_FLUSH,null);
                     if (route != null) {
-                        Log.d("Route", route);
                         edFrom.setText(route);
-                        Route currentRoute = targetPoints.get(route);
+                        Route currentRoute = routePoints.get(route.toUpperCase());
                         moveImageView(ivLocationMarker, currentRoute.get_x(), currentRoute.get_y(), 100);
                     }
                 }
             };
 
-            handler.postDelayed(runnable, 10000);
+            handler.postDelayed(runnable, 500);
         }
     };
 
@@ -320,11 +373,14 @@ public class Navigation extends AppCompatActivity implements View.OnClickListene
                 float x = motionEvent.getX()-105;
                 float y = motionEvent.getY()-105;
                 location=x+","+y;
-                jsonReaderWriter.JSONWriter(edFrom.getText().toString(),location);
+                //jsonReaderWriter.JSONWriter(edFrom.getText().toString(),location);
                 moveImageView(ivLocationMarker,x,y,300);
                 return false;
             }
         });
+
+        ivLocationSource = findViewById(R.id.iv_src_marker);
+        ivLocationDestination = findViewById(R.id.iv_destination_marker);
 
         edFrom = findViewById(R.id.ed_location_from);
         edTo = findViewById(R.id.ed_location_to);
@@ -375,20 +431,21 @@ public class Navigation extends AppCompatActivity implements View.OnClickListene
         });
     }*/
 
-    private void drawRoute(int startX, int startY, int stopX, int stopY) {
-
+    private void drawRoute(float startX, float startY, float stopX, float stopY) {
         Canvas canvas = new Canvas(tempBitmap);
         canvas.drawBitmap(mutableBitmap,0,0,null);
         Paint paint = new Paint();
-        paint.setColor(Color.BLACK);
-        paint.setStrokeWidth(20);
+        paint.setColor(Color.YELLOW);
+        paint.setStrokeWidth(30);
         canvas.drawLine(startX, startY, stopX, stopY, paint);
-        //canvas.drawLine(200, 0, 0, 200, paint);
         ivFloorPlan.setImageDrawable(new BitmapDrawable(getResources(),tempBitmap));
+        Bitmap bitmap = tempBitmap;
+        mutableBitmap = bitmap.copy(Bitmap.Config.ARGB_8888, true);
+        tempBitmap = Bitmap.createBitmap(mutableBitmap.getWidth(), mutableBitmap.getHeight(), Bitmap.Config.RGB_565);
     }
 
     private void prepBitmap(){
-        Bitmap bitmap = BitmapFactory.decodeResource(getResources(),R.drawable.floor_plan);
+        Bitmap bitmap = BitmapFactory.decodeResource(getResources(),R.drawable.floor_planar6_new);
         mutableBitmap = bitmap.copy(Bitmap.Config.ARGB_8888, true);
         tempBitmap = Bitmap.createBitmap(mutableBitmap.getWidth(), mutableBitmap.getHeight(), Bitmap.Config.RGB_565);
     }
@@ -425,7 +482,11 @@ public class Navigation extends AppCompatActivity implements View.OnClickListene
         }else{
             routePoints = targetMap;
             Log.d("Points", String.valueOf(routePoints));
+            routePoints.putAll(targetPoints);
+            Log.d("PPP", String.valueOf(routePoints));
         }
+        startTracking();
+
     }
 
 }
