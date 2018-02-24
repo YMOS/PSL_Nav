@@ -20,7 +20,7 @@ public class PointMapper{
         list = new ArrayList<>();
         list.add("IN");
         list.add("P1");
-        list.add("P2");
+        list.add("P3");
         list.add("C31");
         pointMapList.put(key,list);
 
@@ -43,6 +43,16 @@ public class PointMapper{
         list.add("P4");
         list.add("P5");
         list.add("MERCURY");
+        pointMapList.put(key,list);
+
+        key="C30,C24";
+        list = new ArrayList<>();
+        list.add("C30");
+        list.add("P3");
+        list.add("P4");
+        list.add("P7");
+        list.add("P8");
+        list.add("C24");
         pointMapList.put(key,list);
 
         return pointMapList;

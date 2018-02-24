@@ -48,6 +48,7 @@ import org.json.JSONObject;
 
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.Timer;
@@ -60,6 +61,8 @@ public class Navigation extends AppCompatActivity implements View.OnClickListene
     final int READ_EXTERNAL_STORAGE = 1;
     final int READ_WIFI_STATE = 2;
 
+    //Flag for calling TTS
+    boolean isNavigating=false;
     //Location Updater
     private LocationUpdater locationUpdater=null;
 
@@ -218,14 +221,19 @@ public class Navigation extends AppCompatActivity implements View.OnClickListene
                     if (Utility.isValidString(edTo.getText().toString())) {
                         strTo = edTo.getText().toString();
                         // Start the tracking procedure.
-                        putSourceandDestinationMarkers(strTo,strFrom);
-                        drawNavigationPath(strFrom,strTo);
+                        startNavigation();
                     }
                 }
             }
         }
 
         return false;
+    }
+
+    private void startNavigation() {
+        isNavigating=true;
+        putSourceandDestinationMarkers(strTo,strFrom);
+        drawNavigationPath(strFrom,strTo);
     }
 
     private void putSourceandDestinationMarkers(String strTo, String strFrom) {
@@ -278,6 +286,8 @@ public class Navigation extends AppCompatActivity implements View.OnClickListene
         edTo.setOnEditorActionListener(this);
     }
 
+    String prev=null;
+
     Runnable runnable = new Runnable() {
         @Override
         public void run() {
@@ -314,14 +324,46 @@ public class Navigation extends AppCompatActivity implements View.OnClickListene
             locationUpdater.callBack =new LocationUpdater.LocationUpdateCallback() {
                 @Override
                 public void onLocationUpdate(String route) {
-                    //textToSpeech.speak(route,TextToSpeech.QUEUE_FLUSH,null);
-                    if (route != null) {
+                    if(route!=null){
                         Route currentRoute = routePoints.get(route.toUpperCase());
-                        if(route.startsWith("p")) {
-                            moveImageView(ivLocationMarker, currentRoute.get_x() -105, currentRoute.get_y() - 105, 100);
-                            Log.d("Ra","entered");
-                        } else
-                            moveImageView(ivLocationMarker,currentRoute.get_x(),currentRoute.get_y(),100);
+                        updateMarkerPosition(route,currentRoute);
+                        if(prev==null && isNavigating){
+                            prev=route;
+                            speak(currentRoute);
+                        }else{
+                            if(!prev.equals(route) && isNavigating){
+                                speak(currentRoute);
+                                prev=route;
+                            }
+                        }
+                    }
+                }
+
+                private void updateMarkerPosition(String route,Route currentRoute) {
+                    if(route.startsWith("p")){
+                        moveImageView(ivLocationMarker, currentRoute.get_x() -105, currentRoute.get_y() - 105, 100);
+                    }
+                    else{
+                        moveImageView(ivLocationMarker,currentRoute.get_x(),currentRoute.get_y(),1);
+                    }
+                }
+
+                private void speak(Route currentRoute) {
+                    if(currentRoute.getLabel().toUpperCase().equals(navRoute.get(navRoute.size()-1))){
+                        textToSpeech.speak("Destination reached",TextToSpeech.QUEUE_FLUSH,null);
+                        isNavigating = false;
+                        prepBitmap();
+                        prev = null;
+                    }
+                    else if(currentRoute.getLabel().toUpperCase().equals(navRoute.get(navRoute.size()-2))){
+                        textToSpeech.speak("Destination nearby. Please check!",TextToSpeech.QUEUE_FLUSH,null);
+                    }
+                    else if (currentRoute.getLabel().toLowerCase().equals("p1")){
+                        Log.d("Speech","p1");
+                        textToSpeech.speak("Take a right turn",TextToSpeech.QUEUE_FLUSH,null);
+                    }else{
+                        Log.d("Speech","p2");
+                        textToSpeech.speak("Go straight",TextToSpeech.QUEUE_FLUSH,null);
                     }
                 }
             };
@@ -342,6 +384,14 @@ public class Navigation extends AppCompatActivity implements View.OnClickListene
         tilTo = findViewById(R.id.til_location_to);
         tilFrom = findViewById(R.id.til_location_from);
         rootView = findViewById(R.id.root_view);
+        textToSpeech = new TextToSpeech(getApplicationContext(), new TextToSpeech.OnInitListener() {
+            @Override
+            public void onInit(int status) {
+                if(status!=TextToSpeech.ERROR){
+                    textToSpeech.setLanguage(Locale.ENGLISH);
+                }
+            }
+        });
         mWifiManager = (WifiManager) this.getApplicationContext().getSystemService(Context.WIFI_SERVICE);
     }
 
@@ -369,7 +419,7 @@ public class Navigation extends AppCompatActivity implements View.OnClickListene
     }
 
     private void prepBitmap(){
-        Bitmap bitmap = BitmapFactory.decodeResource(getResources(),R.drawable.floor_planar6_new);
+        Bitmap bitmap = BitmapFactory.decodeResource(getResources(),R.drawable.floor_plan_ar6);
         mutableBitmap = bitmap.copy(Bitmap.Config.ARGB_8888, true);
         tempBitmap = Bitmap.createBitmap(mutableBitmap.getWidth(), mutableBitmap.getHeight(), Bitmap.Config.RGB_565);
     }
